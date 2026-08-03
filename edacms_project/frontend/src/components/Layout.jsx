@@ -3,14 +3,14 @@ import { NavLink, Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const NAV_ITEMS = [
-  { to: "/", label: "Dashboard", icon: "📊", end: true },
-  { to: "/documents", label: "Document Repository", icon: "📁" },
-  { to: "/contracts", label: "Contract Lifecycle", icon: "📄" },
-  { to: "/search", label: "Search & Retrieval", icon: "🔍" },
-  { to: "/workflow", label: "Workflow & Approvals", icon: "✅" },
-  { to: "/versioning", label: "Versioning", icon: "🕓" },
-  { to: "/access", label: "Security & Access", icon: "🔐", roles: ["admin"] },
-  { to: "/reports", label: "Reports & Compliance", icon: "📈" },
+  { to: "/", label: "Dashboard", end: true },
+  { to: "/documents", label: "Document Repository" },
+  { to: "/contracts", label: "Contract Lifecycle" },
+  { to: "/search", label: "Search & Retrieval" },
+  { to: "/workflow", label: "Workflow & Approvals" },
+  { to: "/versioning", label: "Versioning" },
+  { to: "/access", label: "Security & Access", roles: ["admin"] },
+  { to: "/reports", label: "Reports & Compliance" },
 ];
 
 function initials(name) {
@@ -40,7 +40,6 @@ export default function Layout() {
               end={item.end}
               className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
             >
-              <span className="nav-icon">{item.icon}</span>
               {item.label}
             </NavLink>
           ))}
