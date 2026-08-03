@@ -1,8 +1,12 @@
-# Python bytecode and caches
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Virtual environments
 .venv/
@@ -10,13 +14,16 @@ venv/
 env/
 ENV/
 
-# Local environment files
+# Environment/config files
 .env
 .env.*
+*.local
 
 # IDE/editor files
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # OS files
 .DS_Store
@@ -25,6 +32,11 @@ Thumbs.db
 # Logs
 *.log
 
-# Uploads and local runtime data
+# App runtime data
 backend/uploads/*
 !backend/uploads/placeholder.txt
+
+# Node / frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
