@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api, { API_BASE } from "../api";
+import api from "../api";
 
 export default function Search() {
   const [q, setQ] = useState("");
@@ -17,6 +17,23 @@ export default function Search() {
     const res = await api.get("/documents", { params: { q, category, date_from: dateFrom, date_to: dateTo } });
     setResults(res.data);
     setSearched(true);
+  }
+
+  async function downloadDocument(documentId, title) {
+    try {
+      const res = await api.get(`/documents/${documentId}/download`, { responseType: "blob" });
+      const blob = new Blob([res.data], { type: res.headers["content-type"] || "application/octet-stream" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = title || `document-${documentId}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   return (
@@ -59,9 +76,9 @@ export default function Search() {
                     <td>{d.uploaded_by}</td>
                     <td>{d.upload_date ? new Date(d.upload_date).toLocaleDateString() : "—"}</td>
                     <td>
-                      <a className="link-btn" href={`${API_BASE}/documents/${d.document_id}/download`} target="_blank" rel="noreferrer">
+                      <button className="link-btn" type="button" onClick={() => downloadDocument(d.document_id, d.title)}>
                         Download
-                      </a>
+                      </button>
                     </td>
                   </tr>
                 ))}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api, { API_BASE } from "../api";
+import api from "../api";
 import Modal from "../components/Modal";
 
 export default function Documents() {
@@ -14,6 +14,23 @@ export default function Documents() {
 
   function load() {
     api.get("/documents", { params: { q, category } }).then((res) => setDocs(res.data));
+  }
+
+  async function downloadDocument(documentId, title) {
+    try {
+      const res = await api.get(`/documents/${documentId}/download`, { responseType: "blob" });
+      const blob = new Blob([res.data], { type: res.headers["content-type"] || "application/octet-stream" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = title || `document-${documentId}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.response?.data?.error || "Download failed.");
+    }
   }
 
   useEffect(() => { load(); }, [q, category]);
@@ -59,14 +76,16 @@ export default function Documents() {
                   <td>{d.version_count}</td>
                   <td><span className="badge badge-active">{d.status}</span></td>
                   <td>
-                    <a
+                    <button
                       className="link-btn"
-                      href={`${API_BASE}/documents/${d.document_id}/download`}
-                      onClick={(e) => e.stopPropagation()}
-                      target="_blank" rel="noreferrer"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        downloadDocument(d.document_id, d.title);
+                      }}
                     >
                       Download
-                    </a>
+                    </button>
                   </td>
                 </tr>
               ))}
