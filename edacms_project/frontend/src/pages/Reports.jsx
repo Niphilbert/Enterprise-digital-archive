@@ -9,14 +9,28 @@ export default function Reports() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function generate(e) {
-    e.preventDefault();
+  async function downloadReport() {
     setLoading(true); setError("");
     try {
-      const res = await api.get("/reports/compliance", {
-        params: { report_type: reportType, date_from: dateFrom, date_to: dateTo },
-      });
+      const params = { report_type: reportType, date_from: dateFrom, date_to: dateTo };
+      const res = await api.get("/reports/compliance", { params });
       setReport(res.data);
+
+      const blobRes = await api.get("/reports/compliance/download", {
+        params,
+        responseType: "blob",
+      });
+
+      const contentType = blobRes.headers?.["content-type"] || "application/pdf";
+      const blob = new Blob([blobRes.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${(reportType || "report").toLowerCase().replace(/\s+/g, "_")}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       setError(err.response?.data?.error || "Could not generate report.");
     } finally {
@@ -24,8 +38,9 @@ export default function Reports() {
     }
   }
 
-  function printReport() {
-    window.print();
+  async function generate(e) {
+    e.preventDefault();
+    await downloadReport();
   }
 
   return (
@@ -81,7 +96,7 @@ export default function Reports() {
                   ))}
                 </tbody>
               </table>
-              <button className="btn btn-outline" style={{ marginTop: 14 }} onClick={printReport}>Export as PDF</button>
+              <button className="btn btn-outline" style={{ marginTop: 14 }} onClick={downloadReport}>Download Report Document</button>
             </div>
           )}
         </div>
