@@ -34,14 +34,33 @@ export default function Login() {
 
   return (
     <div className="login-screen">
-      <div className="login-box">
-        <div className="login-logo">ED</div>
-        <h1 className="login-title">Enterprise Digital Archive &amp; Contract Management System</h1>
-        <p className="login-subtitle">Olympe Consulting</p>
+      <div className="login-card">
+        <div className="login-illustration" aria-hidden="true">
+          <div className="company-mark">
+            <div className="company-mark__shield">OC</div>
+            <div className="company-mark__text">
+              <div className="company-mark__name">Olympe Consulting</div>
+              <div className="company-mark__tag">Digital Strategy • Contracts • Governance</div>
+            </div>
+          </div>
+          <div className="company-panel">
+            <div className="company-panel__header">Enterprise Platform</div>
+            <div className="company-panel__body">
+              <div className="company-panel__line" />
+              <div className="company-panel__line short" />
+              <div className="company-panel__line tiny" />
+            </div>
+          </div>
+        </div>
 
-        {error && <div className="login-error">{error}</div>}
+        <div className="login-box">
+          <div className="login-logo">ED</div>
+          <h1 className="login-title">Enterprise Digital Archive &amp; Contract Management System</h1>
+          <p className="login-subtitle">Secure document governance for Olympe Consulting</p>
 
-        <form onSubmit={handleSubmit}>
+          {error && <div className="login-error">{error}</div>}
+
+          <form onSubmit={handleSubmit}>
           <div className="field">
             <label>Email address</label>
             <input
@@ -67,18 +86,19 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="demo-accounts">
-          <div className="demo-title">Demo accounts (click to autofill, after running <code>seed.py</code>):</div>
-          {DEMO_ACCOUNTS.map((acc) => (
-            <div
-              key={acc.email}
-              className="demo-row"
-              onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
-            >
-              <span><code>{acc.email}</code> / {acc.password}</span>
-              <span>— {acc.role}</span>
-            </div>
-          ))}
+          <div className="demo-accounts">
+            <div className="demo-title">Demo accounts (click to autofill, after running <code>seed.py</code>):</div>
+            {DEMO_ACCOUNTS.map((acc) => (
+              <div
+                key={acc.email}
+                className="demo-row"
+                onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
+              >
+                <span><code>{acc.email}</code> / {acc.password}</span>
+                <span>— {acc.role}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
