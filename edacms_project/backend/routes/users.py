@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db
 from models import User, Role
-from utils import role_required, log_action
+from utils import role_required, log_action, assign_pending_approvals
 
 users_bp = Blueprint("users", __name__, url_prefix="/api/users")
 
@@ -30,6 +30,8 @@ def create_user():
                 role_id=data["role_id"], department=data.get("department", ""))
     user.set_password(data["password"])
     db.session.add(user)
+    db.session.flush()
+    assign_pending_approvals(user)
     db.session.commit()
     log_action(admin_id, "CREATE_USER", details=user.email)
     return jsonify(user.to_dict()), 201
@@ -42,7 +44,9 @@ def update_user(user_id):
     user = User.query.get_or_404(user_id)
     data = request.get_json(force=True) or {}
 
+    role_changed = False
     if "role_id" in data:
+        role_changed = user.role_id != data["role_id"]
         user.role_id = data["role_id"]
     if "department" in data:
         user.department = data["department"]
@@ -52,6 +56,9 @@ def update_user(user_id):
         user.set_password(data["password"])
 
     db.session.commit()
+    if role_changed:
+        assign_pending_approvals(user)
+        db.session.commit()
     log_action(admin_id, "UPDATE_USER", details=user.email)
     return jsonify(user.to_dict())
 

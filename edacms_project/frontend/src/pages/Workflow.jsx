@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../api";
 import Modal from "../components/Modal";
+import { useAuth } from "../context/AuthContext";
 
 function timeAgo(iso) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -16,9 +17,14 @@ export default function Workflow() {
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState("");
+  const { user } = useAuth();
 
   function load() {
-    api.get("/workflow/pending").then((res) => setItems(res.data));
+    api.get("/workflow/pending")
+      .then((res) => setItems(res.data))
+      .catch((err) => {
+        setError(err.response?.data?.error || "Could not load pending approvals.");
+      });
   }
   useEffect(() => { load(); }, []);
 
@@ -34,7 +40,9 @@ export default function Workflow() {
       {error && <div className="error-banner">{error}</div>}
 
       <div className="card" style={{ padding: 0 }}>
-        {items.length === 0 ? (
+        {user?.role !== "manager" ? (
+          <div className="empty-state">Only manager accounts can access approval actions.</div>
+        ) : items.length === 0 ? (
           <div className="empty-state">You have no pending approvals right now. 🎉</div>
         ) : (
           <table>
@@ -73,6 +81,7 @@ export default function Workflow() {
 function ReviewModal({ item, onClose, onDecided, setError }) {
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
+  const { user } = useAuth();
 
   async function decide(decision) {
     setBusy(true); setError("");
@@ -93,8 +102,12 @@ function ReviewModal({ item, onClose, onDecided, setError }) {
       </div>
       <div className="modal-actions">
         <button className="btn btn-outline" onClick={onClose} disabled={busy}>Cancel</button>
-        <button className="btn btn-red" onClick={() => decide("Rejected")} disabled={busy}>Reject</button>
-        <button className="btn btn-green" onClick={() => decide("Approved")} disabled={busy}>Approve</button>
+        {user?.role === "manager" ? (
+          <>
+            <button className="btn btn-red" onClick={() => decide("Rejected")} disabled={busy}>Reject</button>
+            <button className="btn btn-green" onClick={() => decide("Approved")} disabled={busy}>Approve</button>
+          </>
+        ) : null}
       </div>
     </Modal>
   );

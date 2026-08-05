@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db
 from models import Contract, Workflow, ApprovalStep, User, Role
-from utils import log_action
+from utils import log_action, select_approver
 
 contracts_bp = Blueprint("contracts", __name__, url_prefix="/api/contracts")
 
@@ -73,35 +73,41 @@ def submit_for_approval(contract_id):
     data = request.get_json(silent=True) or {}
     approver_id = data.get("approver_id")
 
-    approver = None
+    approver_ids = []
+    approver_name = None
     if approver_id:
         approver = User.query.get(approver_id)
+        if not approver:
+            return jsonify({"error": "No suitable approver could be found"}), 400
+        approver_ids = [approver.user_id]
+        approver_name = approver.full_name
     else:
-        # Prefer a Manager as approver; fall back to Admin. Never assign the submitter as their own approver.
-        for preferred_role in ("manager", "admin"):
-            role = Role.query.filter_by(role_name=preferred_role).first()
+        candidates = []
+        for role_name in ("legal_manager", "manager", "admin"):
+            role = Role.query.filter_by(role_name=role_name).first()
             if role:
-                candidate = User.query.filter(
-                    User.role_id == role.role_id, User.user_id != user_id
-                ).first()
-                if candidate:
-                    approver = candidate
-                    break
+                for candidate in User.query.filter(User.role_id == role.role_id).all():
+                    if candidate.user_id != user_id:
+                        candidates.append({"role_name": role_name, "user_id": candidate.user_id, "user": candidate})
 
-    if not approver:
-        return jsonify({"error": "No suitable approver could be found"}), 400
+        if not candidates:
+            return jsonify({"error": "No suitable approver could be found"}), 400
+
+        approver_ids = [candidate["user_id"] for candidate in candidates]
+        approver_name = ", ".join(candidate["user"].full_name for candidate in candidates[:3])
 
     workflow = Workflow(contract_id=contract.contract_id, current_step="Manager Review", status="Pending")
     db.session.add(workflow)
     db.session.flush()
 
-    step = ApprovalStep(workflow_id=workflow.workflow_id, approver_id=approver.user_id)
-    db.session.add(step)
+    for approver_user_id in approver_ids:
+        step = ApprovalStep(workflow_id=workflow.workflow_id, approver_id=approver_user_id)
+        db.session.add(step)
 
     contract.status = "Under Review"
     db.session.commit()
 
-    log_action(user_id, "SUBMIT_CONTRACT", details=f"{contract.title} -> {approver.full_name}")
+    log_action(user_id, "SUBMIT_CONTRACT", details=f"{contract.title} -> {approver_name or 'approvers'}")
     return jsonify(contract.to_dict()), 200
 
 

@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from extensions import db
 from models import User
-from utils import log_action
+from utils import log_action, assign_pending_approvals
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -15,6 +16,10 @@ def login():
     user = User.query.filter_by(email=email).first()
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid email or password"}), 401
+
+    assigned_steps = assign_pending_approvals(user)
+    if assigned_steps:
+        db.session.commit()
 
     token = create_access_token(
         identity=str(user.user_id),
